@@ -38,6 +38,7 @@ const props = defineProps({
   options: {
     type: Array,
     required: true,
+
   },
 });
 
@@ -46,11 +47,9 @@ const emit = defineEmits(["update-options"]);
 const { handleChange, debounce } = fieldMixin.setup(props, { emit });
 
 const availableOptions = ref([
-  ...props.options,
+...props.options,
 ]);
-const disabledOptions = ref([
-  ...props.options.filter((option) => option.disabled),
-]);
+const disabledOptions = ref([]);
 
 const toggleOption = (option, from) => {
   debounce(() => {
@@ -63,12 +62,9 @@ const toggleOption = (option, from) => {
       disabledOptions.value = disabledOptions.value.filter((o) => o !== option);
       availableOptions.value.push(option);
     }
-
-    console.log(availableOptions.value, disabledOptions.value);
-
     emit("update-options", {
-      availableOptions: availableOptions.value,
       disabledOptions: disabledOptions.value,
+      id: option.id,
     });
   }, 50)();
 };

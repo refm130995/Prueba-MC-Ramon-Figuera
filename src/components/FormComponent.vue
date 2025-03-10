@@ -87,9 +87,17 @@
     });
   };
 
+  const updateOptions = (disabledOptions, id) => {
+    formData = {
+      ...formData,
+      [id]: id,
+      options: disabledOptions.disabledOptions,
+    };
+  };
+
   const onSubmit = (event) => {
+    console.log()
     emit("formSubmit", formData);
-    console.log(availableOptions.value);
     // set in text area
     document.querySelector("#result").value = JSON.stringify(formData);
 
@@ -106,9 +114,6 @@
     return defineAsyncComponent(() => import(`./fields/${compName}Field.vue`));
   };
 
-  const handleUpdateOptions = (updatedOptions) => {
-    console.log(updatedOptions);
-  };
 
   defineExpose({
     setSelected,
