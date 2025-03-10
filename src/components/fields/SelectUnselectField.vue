@@ -31,25 +31,33 @@
 </template>
 
 <script setup>
-import { defineProps, defineEmits, ref } from "vue";
+import { defineProps, defineEmits, ref, watch } from "vue";
 import fieldMixin from "../FieldMixin";
 
 const props = defineProps({
-  options: {
-    type: Array,
+  field: {
+    type: Object,
     required: true,
-
+  },
+  modelValue: {
+    type: Array,
+    default: () => [],
   },
 });
 
-const emit = defineEmits(["update-options"]);
+const emit = defineEmits(["update"]);
 
 const { handleChange, debounce } = fieldMixin.setup(props, { emit });
 
-const availableOptions = ref([
-...props.options,
-]);
+const availableOptions = ref([...props.field.options]);
 const disabledOptions = ref([]);
+
+watch(
+  () => props.modelValue,
+  (newVal) => {
+    availableOptions.value = [...newVal];
+  }
+);
 
 const toggleOption = (option, from) => {
   debounce(() => {
@@ -62,9 +70,9 @@ const toggleOption = (option, from) => {
       disabledOptions.value = disabledOptions.value.filter((o) => o !== option);
       availableOptions.value.push(option);
     }
-    emit("update-options", {
-      disabledOptions: disabledOptions.value,
-      id: option.id,
+    emit("update", {
+      value: disabledOptions.value,
+      id: props.field.id,
     });
   }, 50)();
 };
