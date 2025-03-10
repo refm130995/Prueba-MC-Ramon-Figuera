@@ -1,133 +1,160 @@
-<template>  
+<template>
     <div class="dynamic-form">
-        <form @submit.prevent="onSubmit" class="form-group">
-            <div v-for="(field) in fieldDefinitions" :key="field.id" class="form-field">
-                <label>{{ field.label }}</label>
-                <component :is="getComponentName(field)" :field="field"
-                    :modelValue="modelValue ? modelValue[field.id] : ''" 
-                    @update="updateFormData"
-                    :ref="el => setFieldRef(field, el)" />
-            </div>
-            <div class="button-container">
-                <button type="submit" class="button primary">Guardar</button>
-            </div>
+      <form @submit.prevent="onSubmit" class="form-group">
+        <div v-for="field in fieldDefinitions" :key="field.id" class="form-field">
+          <label>{{ field.label }}</label>
+          <component
+            :is="getComponentName(field)"
+            :field="field"
+            :modelValue="modelValue ? modelValue[field.id] : ''"
+            @update="updateFormData"
+            :ref="(el) => setFieldRef(field, el)"
+          />
+          <div v-if="field.type === 'SelectUnselect'">
+        <SelectUnselectField
+          :options="field.options"
+          v-model="formData[field.id]"
+          @update-options="updateOptions"
+        />
+      </div>
+        </div>
 
-        </form>
-        <label id="result-label">Result:</label><br/>
-        <textarea id="result" rows="10" cols="50" disabled></textarea>
+        <div class="button-container">
+          <button type="submit" class="button primary">Guardar</button>
+        </div>
+      </form>
+
+      <label id="result-label">Result:</label><br />
+      <textarea id="result" rows="10" cols="50" disabled></textarea>
     </div>
-</template>
+  </template>
 
-<script setup>
-import { ref, reactive, computed, defineAsyncComponent, isProxy, toRaw, watch } from 'vue';
-import fieldMixin from './FieldMixin';
-const emit = defineEmits(['update', 'formSubmit']);
-const fieldRefs = {};
+  <script setup>
+  import {
+    ref,
+    reactive,
+    computed,
+    defineAsyncComponent,
+    isProxy,
+    toRaw,
+    watch,
+  } from "vue";
+  import fieldMixin from "./FieldMixin";
+  import SelectUnselectField from "./fields/SelectUnselectField.vue";
 
-const props = defineProps({
+  const emit = defineEmits(["update", "formSubmit"]);
+  const fieldRefs = {};
+
+  const props = defineProps({
     fieldDefinitions: {
-        type: Array,
-        required: true,
+      type: Array,
+      required: true,
     },
     modelValue: {
-        type: Object,
-        default: () => ({}),
+      type: Object,
+      default: () => ({}),
+    },
+  });
+
+  let { handleChange, valueFromEvent } = fieldMixin.setup(props, { emit });
+
+  let formData = toRaw(props.modelValue);
+
+  watch(
+    () => props.modelValue,
+    (newVal) => {
+      formData = toRaw(newVal);
     }
-});
-let { handleChange, valueFromEvent } = fieldMixin.setup(props, { emit });
+  );
 
-let formData = toRaw(props.modelValue);
-
-watch(() => props.modelValue, (newVal) => {
-    formData = toRaw(newVal);
-});
-
-const setFieldRef = (field, ref) => {
+  const setFieldRef = (field, ref) => {
     fieldRefs[field.id] = ref;
-}
+  };
 
-const setSelected = (fieldId, value) => {
+  const setSelected = (fieldId, value) => {
     let refs = fieldRefs;
     refs[fieldId].setSelected(value);
-}
+  };
 
-const updateFormData = (idAndValue) => {
+  const updateFormData = (idAndValue) => {
     let { id, value } = { ...idAndValue };
     formData = {
-        ...formData,
-        [id]: value,
+      ...formData,
+      [id]: value,
     };
-
-    emit('update', {
-        value: toRaw(formData),
+    emit("update", {
+      value: toRaw(formData),
     });
-};
+  };
 
-const onSubmit = (event) => {
-
-    emit('formSubmit', formData);
-
+  const onSubmit = (event) => {
+    emit("formSubmit", formData);
+    console.log(availableOptions.value);
     // set in text area
-    document.querySelector('#result').value = JSON.stringify(formData);
+    document.querySelector("#result").value = JSON.stringify(formData);
 
     event.preventDefault();
     event.stopPropagation();
-};
+  };
 
-const getComponentName = (field) => {
-
+  const getComponentName = (field) => {
     let compName = field.type.charAt(0).toUpperCase() + field.type.slice(1);
-    
-    // Convert to CamelCase 
+
+    // Convert to CamelCase
     compName = compName.replace(/[_-](\w)/g, (_, match) => match.toUpperCase());
 
     return defineAsyncComponent(() => import(`./fields/${compName}Field.vue`));
-};
+  };
 
-defineExpose({
+  const handleUpdateOptions = (updatedOptions) => {
+    console.log(updatedOptions);
+  };
+
+  defineExpose({
     setSelected,
-});
+  });
+  </script>
 
-</script>
-
-<style scoped>
-.form-group {
+  <style scoped>
+  .form-group {
     margin-bottom: 1rem;
-}
+  }
 
-.is-invalid {
+  .is-invalid {
     border-color: red;
-}
+  }
 
-label {
+  label {
     display: inline-block;
     width: 100px;
     margin-bottom: 10px;
 
     &#result-label {
-        width: 100%;
-        text-align: left;
+      width: 100%;
+      text-align: left;
     }
-}
-input, select, textarea {
+  }
+  input,
+  select,
+  textarea {
     padding: 5px;
     width: 100%;
     margin-bottom: 10px;
-}
+  }
 
-[disabled] {
+  [disabled] {
     cursor: not-allowed;
-}
-.button-container {
+  }
+  .button-container {
     text-align: center;
     margin-bottom: 20px;
 
     button {
-        margin: auto;
+      margin: auto;
     }
-}
-.form-field {
+  }
+  .form-field {
     display: flex;
     align-items: center;
-}
-</style>
+  }
+  </style>
